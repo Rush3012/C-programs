@@ -1,0 +1,212 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+// Node structure for chaining
+typedef struct Node {
+    int key;
+    struct Node* next;
+} Node;
+
+// Hash Table structure
+typedef struct HashTable {
+    int size;
+    Node** table;
+} HashTable;
+
+// Function to initialize the hash table
+HashTable* initHashTable(int size) {
+    HashTable* hashTable = (HashTable*)malloc(sizeof(HashTable));
+    hashTable->size = size;
+    hashTable->table = (Node**)malloc(sizeof(Node*) * size);
+    for (int i = 0; i < size; i++) {
+        hashTable->table[i] = NULL;
+    }
+    return hashTable;
+}
+
+// Function to insert a key into the hash table
+void insert(HashTable* hashTable, int key) {
+    int index = key % hashTable->size;
+
+    // Check if key already exists
+    Node* current = hashTable->table[index];
+    while (current != NULL) {
+        if (current->key == key) {
+            printf("-1\n");
+            return;
+        }
+        current = current->next;
+    }
+
+    // Insert the key at the beginning of the chain
+    Node* newNode = (Node*)malloc(sizeof(Node));
+    newNode->key = key;
+    newNode->next = hashTable->table[index];
+    hashTable->table[index] = newNode;
+}
+
+// Function to search for a key in the hash table
+void search(HashTable* hashTable, int key) {
+    int index = key % hashTable->size;
+    Node* current = hashTable->table[index];
+    int position = 1;
+    while (current != NULL) {
+        if (current->key == key) {
+            printf("%d %d\n", index, position);
+            return;
+        }
+        current = current->next;
+        position++;
+    }
+    
+}
+
+// Function to delete a key from the hash table
+void deleteKey(HashTable* hashTable, int key) {
+    int index = key % hashTable->size;
+    Node* current = hashTable->table[index];
+    Node* prev = NULL;
+    int position = 1;
+    while (current != NULL) {
+        if (current->key == key) {
+            if (prev == NULL) {
+                hashTable->table[index] = current->next;
+            } else {
+                prev->next = current->next;
+            }
+            free(current);
+            printf("%d %d\n", index, position);
+            return;
+        }
+        prev = current;
+        current = current->next;
+        position++;
+    }
+    printf("-1\n");
+}
+
+// Function to update a key in the hash table
+void update(HashTable* hashTable, int oldKey, int newKey) {
+    // Check if the new key already exists
+    search(hashTable, newKey);
+    int index = oldKey % hashTable->size;
+    Node* current = hashTable->table[index];
+    Node* prev = NULL;
+    int position = 1;
+    while (current != NULL) {
+        if (current->key == oldKey) {
+            if (prev == NULL) {
+                hashTable->table[index] = current->next;
+            } else {
+                prev->next = current->next;
+            }
+            free(current);
+            insert(hashTable, newKey);
+            printf("%d %d\n", index, position);
+            return;
+        }
+        prev = current;
+        current = current->next;
+        position++;
+    }
+    printf("-1\n");
+}
+
+// Function to print elements in a chain in sorted order
+void printChain(HashTable* hashTable, int index) {
+    if (index < 0 || index >= hashTable->size || hashTable->table[index] == NULL) {
+        printf("-1\n");
+        return;
+    }
+    
+    // Collect elements into an array
+    Node* current = hashTable->table[index];
+    int count = 0;
+    while (current != NULL) {
+        count++;
+        current = current->next;
+    }
+
+    int* elements = (int*)malloc(sizeof(int) * count);
+    current = hashTable->table[index];
+    count = 0;
+    while (current != NULL) {
+        elements[count++] = current->key;
+        current = current->next;
+    }
+
+    // Sort the collected elements
+    for (int i = 0; i < count - 1; i++) {
+        for (int j = 0; j < count - i - 1; j++) {
+            if (elements[j] > elements[j + 1]) {
+                int temp = elements[j];
+                elements[j] = elements[j + 1];
+                elements[j + 1] = temp;
+            }
+        }
+    }
+
+    // Print the sorted elements
+    for (int i = 0; i < count; i++) {
+        printf("%d ", elements[i]);
+    }
+    printf("\n");
+
+    free(elements);
+}
+
+// Function to free memory allocated to the hash table
+void freeHashTable(HashTable* hashTable) {
+    for (int i = 0; i < hashTable->size; i++) {
+        Node* current = hashTable->table[i];
+        while (current != NULL) {
+            Node* temp = current;
+            current = current->next;
+            free(temp);
+        }
+    }
+    free(hashTable->table);
+    free(hashTable);
+}
+
+int main() {
+    int tableSize;
+    scanf("%d", &tableSize);
+    HashTable* hashTable = initHashTable(tableSize);
+
+    char operation;
+    int key, oldKey, newKey, index;
+    while (1) {
+        scanf(" %c", &operation);
+        if (operation == 'e') {
+            break;
+        }
+        switch (operation) {
+            case 'i':
+                scanf("%d", &key);
+                insert(hashTable, key);
+                break;
+            case 'd':
+                scanf("%d", &key);
+                deleteKey(hashTable, key);
+                break;
+            case 'u':
+                scanf("%d %d", &oldKey, &newKey);
+                update(hashTable, oldKey, newKey);
+                break;
+            case 's':
+                scanf("%d", &key);
+                search(hashTable, key);
+                break;
+            case 'p':
+                scanf("%d", &index);
+                printChain(hashTable, index);
+                break;
+            default:
+                break;
+        }
+    }
+
+    freeHashTable(hashTable);
+    return 0;
+}
